@@ -74,7 +74,7 @@ void printHash(const lsh_u8* hash) {
 }
 
 //Attacks
-string preimageAttackByNumbers(const string& originalMessage, const lsh_u8* originalHash) {
+int preimageAttackByNumbers(const string& originalMessage, const lsh_u8* originalHash) {
     int counter = 1;
     string attackMessage;
     lsh_u8 currentHash[32];
@@ -96,13 +96,17 @@ string preimageAttackByNumbers(const string& originalMessage, const lsh_u8* orig
             printHash(currentHash);
             cout << "Iteration: " << dec << counter << endl;
 
-            return attackMessage;
+            /*return attackMessage;*/
+            return counter;
         }
+
         counter++;
     }
+
 }
 
-string preimageAttackByRandomModifications(const string& originalMessage, const lsh_u8* originalHash) {
+
+int preimageAttackByRandomModifications(const string& originalMessage, const lsh_u8* originalHash) {
     int counter = 1;
     string attackMessage = originalMessage;
     lsh_u8 currentHash[32];
@@ -124,13 +128,14 @@ string preimageAttackByRandomModifications(const string& originalMessage, const 
             printHash(currentHash);
             cout << "Iteration: " << dec << counter << endl;
 
-            return attackMessage;
+            /*return attackMessage;*/
+            return counter;
         }
         counter++;
     }
 }
 
-string birthdayAttackByNumbers(const string& message) {
+int birthdayAttackByNumbers(const string& message) {
     unordered_map<string, string> hashMap;
     int counter = 1;
     string modifiedMessage;
@@ -154,7 +159,10 @@ string birthdayAttackByNumbers(const string& message) {
             cout << "Message 2: " << modifiedMessage << endl;
             cout << "Hash: ";
             printHash(currentHash);
-            return modifiedMessage;
+            cout << "Iteration: " << dec << counter << endl;
+
+            /*return modifiedMessage;*/
+            return counter;
         }
 
         hashMap[hashString] = modifiedMessage;
@@ -162,7 +170,7 @@ string birthdayAttackByNumbers(const string& message) {
     }
 }
 
-string birthdayAttackByRandomModifications(const string& message) {
+int birthdayAttackByRandomModifications(const string& message) {
     unordered_map<string, string> hashMap;
     string modifiedMessage = message;
     lsh_u8 currentHash[32];
@@ -186,7 +194,10 @@ string birthdayAttackByRandomModifications(const string& message) {
             cout << "Message 2: " << modifiedMessage << endl;
             cout << "Hash: ";
             printHash(currentHash);
-            return modifiedMessage;
+            cout << "Iteration: " << dec << counter << endl;
+
+            /*return modifiedMessage;*/
+            return counter;
         }
 
         hashMap[hashString] = modifiedMessage;
@@ -194,49 +205,66 @@ string birthdayAttackByRandomModifications(const string& message) {
     }
 }
 
-int main() {
+void runAttackExperiment(int attackType, int variant, int runs, const lsh_u8* originalHash) {
     string surname = "lopatetskyi";
     string name = "mykhailo";
     string patronymic = "volodymyrovych";
 
     string message = surname + " " + name + " " + patronymic;
 
-    string randomMessage1 = insertRandomSymbols(surname, name, patronymic, 5);
-    cout << "Message with random symbols: " << randomMessage1 << "\n";
+    vector<int> iterations(runs);
+    for (int i = 0; i < runs; ++i) {
+        string randomMessage = insertRandomSymbols(surname, name, patronymic, 5);
+        int count = 0;
 
+        if (attackType == 1) { // Preimage Attack
+            if (variant == 1) {
+                count = preimageAttackByNumbers(randomMessage, originalHash);
+            }
+            else {
+                count = preimageAttackByRandomModifications(randomMessage, originalHash);
+            }
+        }
+        else if (attackType == 2) { // Birthday Attack
+            if (variant == 1) {
+                count = birthdayAttackByNumbers(randomMessage);
+            }
+            else {
+                count = birthdayAttackByRandomModifications(randomMessage);
+            }
+        }
+
+        iterations[i] = count; 
+
+    }
+
+    double mean = 0, variance = 0;
+    for (int it : iterations) {
+        mean += it;
+    }
+    mean /= runs;
+
+    for (int it : iterations) {
+        variance += (it - mean) * (it - mean);
+    }
+    variance /= runs;
+
+    double confidenceInterval = 1.96 * sqrt(variance / runs); 
+
+    cout << "Mean: " << mean << ", Variance: " << variance
+        << ", 95% Confidence Interval: ["
+        << mean - confidenceInterval << ", " << mean + confidenceInterval << "]" << endl;
+}
+
+int main() {
     lsh_u8 originalHash[32];
-    computeHash(randomMessage1, originalHash);
 
-    cout << "Original Message: " << randomMessage1 << endl;
-    cout << "Original Hash: ";
-    printHash(originalHash);
-
-    preimageAttackByNumbers(randomMessage1, originalHash);
-    preimageAttackByRandomModifications(randomMessage1, originalHash);
-
-    string randomMessage2 = insertRandomSymbols(surname, name, patronymic, 5);
-    cout << "New message with random symbols: " << randomMessage2 << "\n";
-
-    computeHash(randomMessage2, originalHash);
-
-    cout << "Original Message: " << randomMessage2 << endl;
-
-    birthdayAttackByNumbers(randomMessage2);
-    birthdayAttackByRandomModifications(randomMessage2);
+    runAttackExperiment(1, 1, 100, originalHash); 
+    /*runAttackExperiment(1, 2, 100, originalHash); 
+    runAttackExperiment(2, 1, 100, originalHash);
+    runAttackExperiment(2, 2, 100, originalHash);*/
 
     return 0;
 }
 
-//int main()
-//{
-//    std::string s = "abc";
-//
-//    lsh_u8* data = reinterpret_cast<lsh_u8*>(&s[0]);
-//    lsh_u8 result[32];
-//    lsh_digest(LSH_TYPE_256, data, s.size(), result);
-//
-//    for (int i = 0; i < 32; i++) {
-//        std::cout << std::hex << std::setfill('0') << std::setw(2) << (int)result[i];
-//    }
-//}
 
