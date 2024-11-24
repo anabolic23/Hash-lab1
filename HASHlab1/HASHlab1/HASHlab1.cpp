@@ -138,11 +138,11 @@ int preimageAttackByNumbers(const string& originalMessage) {
 
         }*/
 
-        if (counter < 31) {
+        /*if (counter < 31) {
             cout << fixAllSpecialSymbols(attackMessage) << " & " ;
             printHash(currentHash, 2);
             cout << " \\\\ \\hline" << endl;
-        }
+        }*/
             
         if (compareHashes(originalHash, currentHash, 2)) {
             cout << "Preimage Attack by Numbers Success!" << endl;
@@ -168,6 +168,11 @@ int preimageAttackByRandomModifications(const string& originalMessage) {
     lsh_u8 originalHash[32];
     computeHash(originalMessage, originalHash);
 
+    computeHash(originalMessage, currentHash);
+    cout << fixAllSpecialSymbols(originalMessage) << " & ";
+    printHash(originalHash, 2);
+    cout << " \\\\ \\hline" << endl;
+
     while (true) {
         attackMessage = modifyMessageRandomly(attackMessage);
         computeHash(attackMessage, currentHash);
@@ -178,11 +183,17 @@ int preimageAttackByRandomModifications(const string& originalMessage) {
 
         }*/
 
+        /*if (counter < 31) {
+            cout << fixAllSpecialSymbols(attackMessage) << " & ";
+            printHash(currentHash, 2);
+            cout << " \\\\ \\hline" << endl;
+        }*/
+
         if (compareHashes(originalHash, currentHash, 2)) {
             cout << "Preimage Attack by Random Modifications Success!" << endl;
-            cout << "Original Message: " << attackMessage << endl;
+            cout << "Original Message: " << fixAllSpecialSymbols(attackMessage) << endl;
             cout << "Hash: ";
-            printHash(currentHash);
+            printHash(currentHash, 2);
             cout << "Iteration: " << dec << counter << endl;
 
             /*return attackMessage;*/
@@ -208,14 +219,28 @@ int birthdayAttackByNumbers(const string& message) {
 
         }*/
 
-        string hashString(reinterpret_cast<char*>(currentHash), 4);
+        /*if (counter < 31) {
+            cout << fixAllSpecialSymbols(modifiedMessage) << " & ";
+            printHash(currentHash, 4);
+            cout << " \\\\ \\hline" << endl;
+        }*/
+
+        //string hashString(reinterpret_cast<char*>(currentHash), 4);
+
+        string hashString(reinterpret_cast<char*>(&currentHash[28]), 4);
 
         if (hashMap.count(hashString)) {
             cout << "Collision found!" << endl;
-            cout << "Message 1: " << hashMap[hashString] << endl;
-            cout << "Message 2: " << modifiedMessage << endl;
-            cout << "Hash: ";
-            printHash(currentHash);
+            cout << "Message 1: " << fixAllSpecialSymbols(hashMap[hashString]) << endl;
+
+            cout << "Message 2: " << fixAllSpecialSymbols(modifiedMessage) << endl;
+            cout << "Hash 1: ";
+            printHash(currentHash, 4);
+
+            computeHash(hashMap[hashString], currentHash);
+            cout << "Hash 2: ";
+            printHash(currentHash, 4);
+
             cout << "Iteration: " << dec << counter << endl;
 
             /*return modifiedMessage;*/
@@ -243,14 +268,28 @@ int birthdayAttackByRandomModifications(const string& message) {
 
         }*/
 
-        string hashString(reinterpret_cast<char*>(currentHash), 4);
+        /*if (counter < 31) {
+            cout << fixAllSpecialSymbols(modifiedMessage) << " & ";
+            printHash(currentHash, 4);
+            cout << " \\\\ \\hline" << endl;
+        }*/
 
-        if (hashMap.count(hashString)) {
+        //string hashString(reinterpret_cast<char*>(currentHash), 4);
+
+        string hashString(reinterpret_cast<char*>(&currentHash[28]), 4);
+
+        if (hashMap.count(hashString) && hashMap[hashString] != modifiedMessage) {
             cout << "Collision found!" << endl;
             cout << "Message 1: " << hashMap[hashString] << endl;
+
             cout << "Message 2: " << modifiedMessage << endl;
-            cout << "Hash: ";
-            printHash(currentHash);
+            cout << "Hash 1: ";
+            printHash(currentHash, 4);
+
+            computeHash(hashMap[hashString], currentHash);
+            cout << "Hash 2: ";
+            printHash(currentHash, 4);
+
             cout << "Iteration: " << dec << counter << endl;
 
             /*return modifiedMessage;*/
@@ -315,10 +354,10 @@ void runAttackExperiment(int attackType, int variant, int runs) {
 
 int main() {
 
-    runAttackExperiment(1, 1, 1); 
-    /*runAttackExperiment(1, 2, 100); 
+    runAttackExperiment(1, 1, 100); 
+    runAttackExperiment(1, 2, 100); 
     runAttackExperiment(2, 1, 100);
-    runAttackExperiment(2, 2, 100);*/
+    runAttackExperiment(2, 2, 100);
 
     return 0;
 }
