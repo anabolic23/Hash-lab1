@@ -8,6 +8,35 @@
 
 using namespace std;
 
+std::string replaceAll(std::string str, const std::string& from, const std::string& to)
+{
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length();
+    }
+    return str;
+}
+
+std::string fixAllSpecialSymbols(std::string s)
+{
+    std::vector<std::pair<std::string, std::string>> pairs{
+        { "%", "\\%" },
+        { "$", "\\$" },
+        { "}", "\\}" },
+        { "{", "\\{" },
+        { "^", "\\^{}" },
+        { "_", "\\_{}" },
+        { "#", "\\#" },
+        { "&", "\\&" },
+        { "~", "\\char`\\~" }
+    };
+    for (auto p : pairs) {
+        s = replaceAll(s, p.first, p.second);
+    }
+    return s;
+}
+
 //Operations with message
 string appendNumber(const string& message, int number) {
     return message + to_string(number);
@@ -73,11 +102,31 @@ void printHash(const lsh_u8* hash) {
     cout << endl;
 }
 
+void printHash(const lsh_u8* hash, int bytes) {
+    for (int i = 0; i < 32 - bytes; i++) {
+        cout << hex << setfill('0') << setw(2) << (int)hash[i];
+    }
+
+    std::cout << "\\textcolor{purple}{";
+
+    for (int i = 32 - bytes; i < 32; i++) {
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+    cout << "}" <<endl;
+}
+
 //Attacks
-int preimageAttackByNumbers(const string& originalMessage, const lsh_u8* originalHash) {
+int preimageAttackByNumbers(const string& originalMessage) {
     int counter = 1;
     string attackMessage;
     lsh_u8 currentHash[32];
+    lsh_u8 originalHash[32];
+    computeHash(originalMessage, originalHash);
+
+    computeHash(originalMessage, currentHash);
+    cout << fixAllSpecialSymbols(originalMessage) << " & ";
+    printHash(originalHash, 2);
+    cout << " \\\\ \\hline" << endl;
 
     while (true) {
         attackMessage = appendNumber(originalMessage, counter);
@@ -88,12 +137,18 @@ int preimageAttackByNumbers(const string& originalMessage, const lsh_u8* origina
             printHash(currentHash);
 
         }*/
+
+        if (counter < 31) {
+            cout << fixAllSpecialSymbols(attackMessage) << " & " ;
+            printHash(currentHash, 2);
+            cout << " \\\\ \\hline" << endl;
+        }
             
         if (compareHashes(originalHash, currentHash, 2)) {
             cout << "Preimage Attack by Numbers Success!" << endl;
-            cout << "Original Message: " << attackMessage << endl;  
+            cout << "Original Message: " << fixAllSpecialSymbols(attackMessage) << endl;
             cout << "Hash: ";
-            printHash(currentHash);
+            printHash(currentHash, 2);
             cout << "Iteration: " << dec << counter << endl;
 
             /*return attackMessage;*/
@@ -106,10 +161,12 @@ int preimageAttackByNumbers(const string& originalMessage, const lsh_u8* origina
 }
 
 
-int preimageAttackByRandomModifications(const string& originalMessage, const lsh_u8* originalHash) {
+int preimageAttackByRandomModifications(const string& originalMessage) {
     int counter = 1;
     string attackMessage = originalMessage;
     lsh_u8 currentHash[32];
+    lsh_u8 originalHash[32];
+    computeHash(originalMessage, originalHash);
 
     while (true) {
         attackMessage = modifyMessageRandomly(attackMessage);
@@ -205,7 +262,7 @@ int birthdayAttackByRandomModifications(const string& message) {
     }
 }
 
-void runAttackExperiment(int attackType, int variant, int runs, const lsh_u8* originalHash) {
+void runAttackExperiment(int attackType, int variant, int runs) {
     string surname = "lopatetskyi";
     string name = "mykhailo";
     string patronymic = "volodymyrovych";
@@ -219,10 +276,10 @@ void runAttackExperiment(int attackType, int variant, int runs, const lsh_u8* or
 
         if (attackType == 1) { // Preimage Attack
             if (variant == 1) {
-                count = preimageAttackByNumbers(randomMessage, originalHash);
+                count = preimageAttackByNumbers(randomMessage);
             }
             else {
-                count = preimageAttackByRandomModifications(randomMessage, originalHash);
+                count = preimageAttackByRandomModifications(randomMessage);
             }
         }
         else if (attackType == 2) { // Birthday Attack
@@ -257,12 +314,11 @@ void runAttackExperiment(int attackType, int variant, int runs, const lsh_u8* or
 }
 
 int main() {
-    lsh_u8 originalHash[32];
 
-    runAttackExperiment(1, 1, 100, originalHash); 
-    /*runAttackExperiment(1, 2, 100, originalHash); 
-    runAttackExperiment(2, 1, 100, originalHash);
-    runAttackExperiment(2, 2, 100, originalHash);*/
+    runAttackExperiment(1, 1, 1); 
+    /*runAttackExperiment(1, 2, 100); 
+    runAttackExperiment(2, 1, 100);
+    runAttackExperiment(2, 2, 100);*/
 
     return 0;
 }
